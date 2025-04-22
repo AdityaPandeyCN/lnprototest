@@ -27,6 +27,7 @@ from bitcoin.core import (
     CScriptWitness,
     Hash160,
     CTransaction,
+    
 )
 from bitcoin.wallet import P2WPKHBitcoinAddress
 
@@ -67,6 +68,7 @@ class Funding(object):
         self.locktime = locktime
         self.outputs: List[Dict[str, Any]] = []
         self.inputs: List[Dict[str, Any]] = []
+        self.is_dual_funding = False
 
     def tx_hex(self) -> str:
         if not self.tx:
@@ -143,6 +145,7 @@ class Funding(object):
         funding_sats: int,
         locktime: int,
         chain_hash: str = BitcoinUtils.blockchain_hash(),
+        
     ) -> "Funding":
         # Create dummy one to start: we will fill in txid at the end
         return Funding(
@@ -155,6 +158,7 @@ class Funding(object):
             remote_funding_privkey,
             chain_hash,
             locktime,
+            
         )
 
     def add_input(
@@ -176,6 +180,14 @@ class Funding(object):
 
         # Get the previous output for its outscript + value
         prev_vout = prev_tx.vout[prevtx_vout]
+
+        if self.is_dual_funding:
+            script_hex = prev_vout.scriptPubKey.hex()
+            # P2SH scripts start with OP_HASH160 (0xa9), push 20 bytes (0x14), and end with OP_EQUAL (0x87)
+            is_p2sh = script_hex.startswith('a914') and script_hex.endswith('87') and len(script_hex) == 46
+            
+            if is_p2sh:
+                raise ValueError("P2SH inputs are not allowed for v2 opens (dual-funding)")
 
         self.inputs.append(
             {
@@ -778,6 +790,7 @@ class CreateDualFunding(Event):
             local_node_privkey=self.local_node_privkey,
             local_funding_privkey=self.local_funding_privkey,
             chain_hash=self.chain_hash,
+            
             **self.resolve_args(
                 runner,
                 {
@@ -788,6 +801,9 @@ class CreateDualFunding(Event):
                 },
             ),
         )
+        funding.is_dual_funding = True
+
+
 
         runner.add_stash("Funding", funding)
 
@@ -861,6 +877,7 @@ class AddOutput(Event):
 
 class FinalizeFunding(Event):
     def __init__(self, funding: ResolvableFunding):
+        super().__init__()
         self.funding = funding
 
     def action(self, runner: Runner) -> bool:
@@ -884,6 +901,7 @@ class AddWitnesses(Event):
     ):
         self.funding = funding
         self.witness_stack = witness_stack
+        super().__init__()  
 
     def action(self, runner: Runner) -> bool:
         funding = self.resolve_arg("funding", runner, self.funding)
