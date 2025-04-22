@@ -65,6 +65,7 @@ class Runner(lnprototest.Runner):
         self.fundchannel_future: Optional[Any] = None
         self.is_fundchannel_kill = False
         self.executor = futures.ThreadPoolExecutor(max_workers=20)
+        self.channel_states = {}
 
         self.startup_flags = []
         for flag in config.getoption("runner_args"):
@@ -121,7 +122,30 @@ class Runner(lnprototest.Runner):
         self.lightning_dir = os.path.join(self.directory, "lightningd")
         if not os.path.exists(self.lightning_dir):
             os.makedirs(self.lightning_dir)
-
+    def _supports_anchors(self) -> bool:
+        """Check if this node supports anchor outputs"""
+        try:
+            info = self.rpc.getinfo()
+            our_features = info["our_features"]["init"]
+            # Feature bit 20/21 represents anchor outputs
+            return "20" in our_features or "21" in our_features
+        except Exception as e:
+            self.logger.warning(f"Error checking anchor support: {e}")
+            return False
+    
+    def _peer_supports_anchors(self, peer_id: str) -> bool:
+        """Check if peer supports anchor outputs"""
+        try:
+            peers = self.rpc.listpeers(peer_id)["peers"]
+            if not peers:
+                return False
+            features = peers[0].get("features", "")
+            # Feature bit 20/21 represents anchor outputs
+            return "20" in features or "21" in features
+        except Exception as e:
+            self.logger.warning(f"Error checking peer anchor support: {e}")
+            return False
+        
     def get_keyset(self) -> KeySet:
         return KeySet(
             revocation_base_secret="0000000000000000000000000000000000000000000000000000000000000011",
@@ -221,12 +245,18 @@ class Runner(lnprototest.Runner):
         shutil.rmtree(os.path.join(self.lightning_dir, "regtest"))
 
     def restart(self) -> None:
+        # Preserve channel states across restarts
+        saved_states = self.channel_states
+        
         self.logger.debug("[RESTART]")
         self.stop(also_bitcoind=False)
         # Make a clean start
         super().restart()
         self.bitcoind.restart()
         self.start(also_bitcoind=False)
+
+        # Restore channel states
+        self.channel_states = saved_states
 
     def connect(self, _: Event, connprivkey: str) -> None:
         self.add_conn(CLightningConn(connprivkey, self.lightning_port))
@@ -372,6 +402,10 @@ class Runner(lnprototest.Runner):
         utxo_outnum: int,
         feerate: int,
     ) -> None:
+        if channel_id not in self.channel_states:
+            self.channel_states[channel_id] = {}
+        self.channel_states[channel_id]['lease_amount'] = amount
+        
         if self.fundchannel_future:
             self.kill_fundchannel()
 
@@ -391,8 +425,13 @@ class Runner(lnprototest.Runner):
         )["psbt"]
 
         def _run_rbf(runner: Runner, conn: Conn) -> Dict[str, Any]:
+            # Use stored amount if available
+            rbf_amount = amount
+            if channel_id in runner.channel_states and 'lease_amount' in runner.channel_states[channel_id]:
+               rbf_amount = runner.channel_states[channel_id]['lease_amount']
+            
             bump = runner.rpc.openchannel_bump(
-                channel_id, amount, initial_psbt, funding_feerate=fmt_feerate
+                channel_id, rbf_amount, initial_psbt, funding_feerate=fmt_feerate
             )
             update = runner.rpc.openchannel_update(channel_id, bump["psbt"])
 
@@ -419,15 +458,43 @@ class Runner(lnprototest.Runner):
         )
 
     def accept_add_fund(self, event: Event) -> None:
-        self.rpc.call(
-            "funderupdate",
-            {
-                "policy": "match",
-                "policy_mod": 100,
-                "fuzz_percent": 0,
-                "leases_only": False,
-            },
-        )
+        """Set funding policy based on anchor support"""
+        # Get current peer from the most recent connection
+        allow_leases = True
+        if self.last_conn:
+            peer_id = self.last_conn.pubkey.format().hex()
+            # Only allow leases if both nodes support anchors
+            allow_leases = self._supports_anchors() and self._peer_supports_anchors(peer_id)
+    
+        if allow_leases:
+            # Normal dual-funding policy with leases allowed
+            self.rpc.call(
+                "funderupdate",
+                {
+                   "policy": "match",
+                   "policy_mod": 100,
+                   "fuzz_percent": 0,
+                   "leases_only": False,
+                },
+            )
+        else:
+            # Disable leases if anchors not supported
+            self.rpc.call(
+                "funderupdate",
+                {
+                   "policy": "match",
+                   "policy_mod": 100,
+                   "fuzz_percent": 0,
+                   "leases_only": False,
+                   # Set lease parameters to zero
+                   "lease_fee_base_sat": 0,
+                   "lease_fee_basis": 0,
+                   "funding_weight": 0,
+                   "channel_fee_max_base_msat": 0,
+                   "channel_fee_max_proportional_thousandths": 0,
+                   "compact_lease": False
+                },
+            )
 
     def addhtlc(self, event: Event, conn: Conn, amount: int, preimage: str) -> None:
         payhash = hashlib.sha256(bytes.fromhex(preimage)).hexdigest()
