@@ -211,7 +211,7 @@ def change_amount(
     return _change_amount
 
 
-@pytest.mark.skip(reason="need to support modern dual fund channel")
+
 def test_open_accepter_no_inputs(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -419,7 +419,7 @@ def test_open_accepter_no_inputs(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual fund channel")
+
 def test_open_accepter_with_inputs(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -630,7 +630,7 @@ def test_open_accepter_with_inputs(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
+
 def test_open_opener_no_input(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -821,7 +821,7 @@ def test_open_opener_no_input(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
+
 def test_open_opener_with_inputs(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -1037,7 +1037,7 @@ def test_open_opener_with_inputs(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
+
 def test_df_accepter_opener_underpays_fees(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -1244,7 +1244,6 @@ def test_df_accepter_opener_underpays_fees(runner: Runner, with_proposal: Any) -
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
 def test_df_opener_accepter_underpays_fees(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -1754,7 +1753,7 @@ def opener_tx_creation(
     ]
 
 
-@pytest.mark.skip(reason="need to support modern dual funding")
+
 def test_rbf_accepter(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -1851,7 +1850,7 @@ def test_rbf_accepter(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="modern dual funding proposal")
+
 def test_rbf_opener(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -1968,7 +1967,7 @@ def test_rbf_opener(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="modern dual funding proposal")
+
 def test_rbf_accepter_channel_ready(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -2087,7 +2086,7 @@ def test_rbf_accepter_channel_ready(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="modern dual funding proposal")
+
 def test_rbf_opener_channel_ready(runner: Runner, with_proposal: Any) -> None:
     """Check that if the funding transaction is published while we're inflight
     everything works as expected"""
@@ -2228,7 +2227,7 @@ def test_rbf_opener_channel_ready(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
+
 def test_rbf_accepter_forgets(runner: Runner, with_proposal: Any) -> None:
     """The runner forgets we're in the middle of an RBF.
     Peer should reconnect and allow another RBF to be initialized.
@@ -2384,7 +2383,7 @@ def test_rbf_accepter_forgets(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
+
 def test_rbf_opener_forgets(runner: Runner, with_proposal: Any) -> None:
     with_proposal(dual_fund_csv)
     runner.add_startup_flag("experimental-dual-fund")
@@ -2563,7 +2562,7 @@ def test_rbf_opener_forgets(runner: Runner, with_proposal: Any) -> None:
     run_runner(runner, test)
 
 
-@pytest.mark.skip(reason="need to support modern dual funding proposal")
+
 def test_rbf_not_valid_rbf(runner: Runner, with_proposal: Any) -> None:
     """The proposed rbf doesn't have any overlapping inputs"""
     with_proposal(dual_fund_csv)
