@@ -6,8 +6,7 @@ dual_fund_csv = [
     "msgdata,tx_add_input,prevtx,byte,prevtx_len",
     "msgdata,tx_add_input,prevtx_vout,u32,",
     "msgdata,tx_add_input,sequence,u32,",
-    "msgdata,tx_add_input,script_sig_len,u16,",
-    "msgdata,tx_add_input,script_sig,byte,script_sig_len",
+    # Removed script_sig fields
     "msgtype,tx_add_output,67",
     "msgdata,tx_add_output,channel_id,channel_id,",
     "msgdata,tx_add_output,serial_id,u64,",
@@ -33,9 +32,27 @@ dual_fund_csv = [
     "subtype,witness_element",
     "subtypedata,witness_element,len,u16,",
     "subtypedata,witness_element,witness,byte,len",
+    # Add TX_INIT_RBF message
+    "msgtype,tx_init_rbf,72",
+    "msgdata,tx_init_rbf,channel_id,channel_id,",
+    "msgdata,tx_init_rbf,locktime,u32,",
+    "msgdata,tx_init_rbf,feerate,u32,",
+    "tlvtype,tx_init_rbf_tlvs,funding_output_contribution,0",
+    "tlvdata,tx_init_rbf_tlvs,funding_output_contribution,satoshis,tu64,",
+    # Add TX_ACK_RBF message
+    "msgtype,tx_ack_rbf,73", 
+    "msgdata,tx_ack_rbf,channel_id,channel_id,",
+    "tlvtype,tx_ack_rbf_tlvs,funding_output_contribution,0",
+    "tlvdata,tx_ack_rbf_tlvs,funding_output_contribution,satoshis,tu64,",
+    # Add TX_ABORT message
+    "msgtype,tx_abort,74",
+    "msgdata,tx_abort,channel_id,channel_id,",
+    "msgdata,tx_abort,len,u16,",
+    "msgdata,tx_abort,data,byte,len",
+    # Update open_channel2
     "msgtype,open_channel2,64",
     "msgdata,open_channel2,chain_hash,chain_hash,",
-    "msgdata,open_channel2,channel_id,channel_id,",
+    "msgdata,open_channel2,zerod_channel_id,channel_id,",  # Changed from channel_id
     "msgdata,open_channel2,funding_feerate_perkw,u32,",
     "msgdata,open_channel2,commitment_feerate_perkw,u32,",
     "msgdata,open_channel2,funding_satoshis,u64,",
@@ -53,11 +70,14 @@ dual_fund_csv = [
     "msgdata,open_channel2,first_per_commitment_point,point,",
     "msgdata,open_channel2,channel_flags,byte,",
     "msgdata,open_channel2,tlvs,opening_tlvs,",
-    "tlvtype,opening_tlvs,option_upfront_shutdown_script,1",
-    "tlvdata,opening_tlvs,option_upfront_shutdown_script,shutdown_len,u16,",
-    "tlvdata,opening_tlvs,option_upfront_shutdown_script,shutdown_scriptpubkey,byte,shutdown_len",
+    # Updated TLV types
+    "tlvtype,opening_tlvs,upfront_shutdown_script,0",
+    "tlvdata,opening_tlvs,upfront_shutdown_script,shutdown_scriptpubkey,byte,...",
+    "tlvtype,opening_tlvs,channel_type,1",
+    "tlvdata,opening_tlvs,channel_type,type,byte,...",
+    # Updated accept_channel2
     "msgtype,accept_channel2,65",
-    "msgdata,accept_channel2,channel_id,channel_id,",
+    "msgdata,accept_channel2,zerod_channel_id,channel_id,",  # Changed from channel_id
     "msgdata,accept_channel2,funding_satoshis,u64,",
     "msgdata,accept_channel2,dust_limit_satoshis,u64,",
     "msgdata,accept_channel2,max_htlc_value_in_flight_msat,u64,",
@@ -72,17 +92,12 @@ dual_fund_csv = [
     "msgdata,accept_channel2,htlc_basepoint,point,",
     "msgdata,accept_channel2,first_per_commitment_point,point,",
     "msgdata,accept_channel2,tlvs,accept_tlvs,",
-    "tlvtype,accept_tlvs,option_upfront_shutdown_script,1",
-    "tlvdata,accept_tlvs,option_upfront_shutdown_script,shutdown_len,u16,",
-    "tlvdata,accept_tlvs,option_upfront_shutdown_script,shutdown_scriptpubkey,byte,shutdown_len",
-    "msgtype,init_rbf,72",
-    "msgdata,init_rbf,channel_id,channel_id,",
-    "msgdata,init_rbf,funding_satoshis,u64,",
-    "msgdata,init_rbf,locktime,u32,",
-    "msgdata,init_rbf,funding_feerate_perkw,u32,",
-    "msgtype,ack_rbf,73",
-    "msgdata,ack_rbf,channel_id,channel_id,",
-    "msgdata,ack_rbf,funding_satoshis,u64,",
+    # Updated TLV types
+    "tlvtype,accept_tlvs,upfront_shutdown_script,0",
+    "tlvdata,accept_tlvs,upfront_shutdown_script,shutdown_scriptpubkey,byte,...",
+    "tlvtype,accept_tlvs,channel_type,1",
+    "tlvdata,accept_tlvs,channel_type,type,byte,...",
+    # Remove old init_rbf and ack_rbf
 ]
 
 # This is https://github.com/lightningnetwork/lightning-rfc/pull/880
